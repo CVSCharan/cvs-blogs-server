@@ -27,3 +27,8 @@
 ## 5. Admin Alerts & Notifications
 - **Decision**: Webhook-based alerting for admins + DB-backed notifications for users.
 - **Rationale**: Real-time awareness of critical system events (security breaches, new registrations).
+
+## 6. Documentation: OpenAPI (Swagger)
+- **Decision**: Use `swagger-jsdoc` for specification and `swagger-ui-express` for presentation.
+- **Rationale**: Keeps documentation close to the code (routes) while providing a premium, interactive testing environment for developers.
+
