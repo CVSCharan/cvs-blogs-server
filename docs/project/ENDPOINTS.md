@@ -1,45 +1,112 @@
-# API Endpoints Reference
+# API Endpoints Reference (Frontend Integration Guide)
 
-All routes are prefixed with `/api/v1`.
+All routes are prefixed with `/api/v1`. All success responses follow the shape: `{ status: 'success', data: { ... } }`.
+
+---
 
 ## 🔐 Authentication
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/auth/register` | Public | Register a new user |
-| POST | `/auth/login` | Public | Login & get refresh cookie |
-| POST | `/auth/refresh` | Cookie | Rotate access/refresh tokens |
-| POST | `/auth/logout` | Cookie | Revoke current session |
-| POST | `/auth/logout-all`| Bearer | Revoke all sessions |
+
+### **Register**
+- **Endpoint**: `POST /auth/register`
+- **Body**:
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "Password123!"
+}
+```
+- **Response (201)**:
+```json
+{
+  "status": "success",
+  "data": {
+    "user": { "id": "uuid", "name": "John Doe", "email": "john@example.com", "role": "USER" },
+    "accessToken": "jwt_string"
+  }
+}
+```
+
+### **Login**
+- **Endpoint**: `POST /auth/login`
+- **Body**: `{ "email": "john@example.com", "password": "Password123!" }`
+- **Response (200)**: Same as Register. *Note: Also sets an HttpOnly `refresh_token` cookie.*
+
+---
 
 ## 📝 Posts
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/posts` | Public | List posts (search/tag/paginated) |
-| GET | `/posts/:slug` | Public | Get post details & comments |
-| POST | `/posts` | Bearer | Create a new post |
-| PATCH | `/posts/:id` | Bearer | Update post (Author/Admin) |
-| DELETE| `/posts/:id` | Bearer | Soft delete post (Author/Admin)|
+
+### **List Posts**
+- **Endpoint**: `GET /posts`
+- **Query Params**: `page`, `limit`, `search`, `tag`
+- **Response (200)**:
+```json
+{
+  "status": "success",
+  "data": {
+    "posts": [
+      {
+        "id": "uuid",
+        "title": "Post Title",
+        "slug": "post-title",
+        "author": { "name": "Admin", "avatarUrl": "..." },
+        "tags": [{ "name": "Tech" }],
+        "_count": { "comments": 5 }
+      }
+    ],
+    "pagination": { "total": 100, "page": 1, "limit": 10, "pages": 10 }
+  }
+}
+```
+
+### **Get Single Post**
+- **Endpoint**: `GET /posts/:slug`
+- **Response (200)**: Includes full content and nested comments.
+
+---
 
 ## 💬 Comments
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/posts/:postId/comments` | Bearer | Add comment or reply |
-| DELETE| `/posts/:postId/comments/:id`| Bearer | Soft delete comment |
+
+### **Create Comment/Reply**
+- **Endpoint**: `POST /posts/:postId/comments`
+- **Body**: 
+```json
+{
+  "content": "Great post!",
+  "parentId": "optional_uuid_for_replies"
+}
+```
+
+---
 
 ## 👤 Users
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/users/me` | Bearer | Get current user profile |
-| PATCH | `/users/me` | Bearer | Update bio/avatar/name |
-| DELETE| `/users/me` | Bearer | Soft delete own account |
+
+### **Update Profile**
+- **Endpoint**: `PATCH /users/me`
+- **Body**: `{ "name": "New Name", "bio": "...", "avatarUrl": "..." }`
+
+---
 
 ## 🛡️ Admin
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/admin/stats` | Admin | Platform statistics & insights |
+
+### **System Stats**
+- **Endpoint**: `GET /admin/stats`
+- **Response (200)**:
+```json
+{
+  "status": "success",
+  "data": {
+    "stats": {
+      "overview": { "totalUsers": 10, "totalPosts": 50, "totalViews": 5000 },
+      "popularPosts": [...],
+      "recentUsers": [...]
+    }
+  }
+}
+```
+
+---
 
 ## 📚 Documentation
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/api-docs` | Public | Swagger UI |
-| GET | `/api-docs.json` | Public | Raw OpenAPI Specification |
+- **Interactive Swagger UI**: `/api-docs`
+- **Raw OpenAPI JSON**: `/api-docs.json`
