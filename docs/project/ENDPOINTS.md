@@ -8,29 +8,13 @@ All routes are prefixed with `/api/v1`. All success responses follow the shape: 
 
 ### **Register**
 - **Endpoint**: `POST /auth/register`
-- **Body**:
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "Password123!"
-}
-```
-- **Response (201)**:
-```json
-{
-  "status": "success",
-  "data": {
-    "user": { "id": "uuid", "name": "John Doe", "email": "john@example.com", "role": "USER" },
-    "accessToken": "jwt_string"
-  }
-}
-```
+- **Body**: `{ "name": "...", "email": "...", "password": "..." }`
+- **Response (201)**: Returns user object and `accessToken`. Sets `refresh_token` cookie.
 
 ### **Login**
 - **Endpoint**: `POST /auth/login`
-- **Body**: `{ "email": "john@example.com", "password": "Password123!" }`
-- **Response (200)**: Same as Register. *Note: Also sets an HttpOnly `refresh_token` cookie.*
+- **Body**: `{ "email": "...", "password": "..." }`
+- **Response (200)**: Same as Register.
 
 ---
 
@@ -38,75 +22,56 @@ All routes are prefixed with `/api/v1`. All success responses follow the shape: 
 
 ### **List Posts**
 - **Endpoint**: `GET /posts`
-- **Query Params**: `page`, `limit`, `search`, `tag`
-- **Response (200)**:
-```json
-{
-  "status": "success",
-  "data": {
-    "posts": [
-      {
-        "id": "uuid",
-        "title": "Post Title",
-        "slug": "post-title",
-        "author": { "name": "Admin", "avatarUrl": "..." },
-        "tags": [{ "name": "Tech" }],
-        "_count": { "comments": 5 }
-      }
-    ],
-    "pagination": { "total": 100, "page": 1, "limit": 10, "pages": 10 }
-  }
-}
-```
+- **Query Params**: `page`, `limit`, `search`, `tag`, `categoryId`
+- **Response (200)**: Includes `posts` array and `pagination` object. Each post includes counts for `likes` and `comments`.
 
 ### **Get Single Post**
 - **Endpoint**: `GET /posts/:slug`
-- **Response (200)**: Includes full content and nested comments.
+- **Response (200)**: Includes full content, nested comments, and interaction flags:
+```json
+{
+  "isLiked": true,
+  "isBookmarked": false,
+  "_count": { "likes": 42, "comments": 5 }
+}
+```
+
+---
+
+## ❤️ Social & Engagement
+
+### **Toggle Like**
+- **Endpoint**: `POST /posts/:postId/like`
+- **Response**: `{ "liked": true }` or `{ "liked": false }`
+
+### **Toggle Follow**
+- **Endpoint**: `POST /users/:userId/follow`
+- **Response**: `{ "following": true }` or `{ "following": false }`
 
 ---
 
 ## 💬 Comments
-
-### **Create Comment/Reply**
 - **Endpoint**: `POST /posts/:postId/comments`
-- **Body**: 
-```json
-{
-  "content": "Great post!",
-  "parentId": "optional_uuid_for_replies"
-}
-```
+- **Body**: `{ "content": "...", "parentId": "optional_uuid" }`
+
+---
+
+## 📁 Categories
+- **Endpoint**: `GET /categories`
+- **Endpoint**: `GET /categories/:slug` (returns category info + all posts in it)
 
 ---
 
 ## 👤 Users
-
-### **Update Profile**
-- **Endpoint**: `PATCH /users/me`
-- **Body**: `{ "name": "New Name", "bio": "...", "avatarUrl": "..." }`
+- **Endpoint**: `GET /users/me`
+- **Response**: Includes `_count: { followers: X, following: Y, posts: Z }` and `isFollowing` flag.
 
 ---
 
 ## 🛡️ Admin
-
-### **System Stats**
-- **Endpoint**: `GET /admin/stats`
-- **Response (200)**:
-```json
-{
-  "status": "success",
-  "data": {
-    "stats": {
-      "overview": { "totalUsers": 10, "totalPosts": 50, "totalViews": 5000 },
-      "popularPosts": [...],
-      "recentUsers": [...]
-    }
-  }
-}
-```
+- **Endpoint**: `GET /admin/stats` (Global metrics)
 
 ---
 
 ## 📚 Documentation
 - **Interactive Swagger UI**: `/api-docs`
-- **Raw OpenAPI JSON**: `/api-docs.json`

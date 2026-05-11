@@ -6,14 +6,19 @@ import userRoutes from './user.routes';
 import adminRoutes from './admin.routes';
 import socialRoutes from './social.routes';
 import categoryRoutes from './category.routes';
+import uploadRoutes from './upload.routes';
 
 const router = Router();
 
 // Health Check
 router.get('/health', healthCheck);
 
+// Uploads
+router.use('/upload', uploadRoutes);
+
 // Categories
 router.use('/categories', categoryRoutes);
+
 
 // Social & Interactions
 router.use('/', socialRoutes);
