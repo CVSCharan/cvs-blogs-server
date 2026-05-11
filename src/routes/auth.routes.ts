@@ -10,9 +10,56 @@ const router = Router();
 // Apply auth specific rate limiting
 router.use(authLimiter);
 
-// Public routes
+/**
+ * @openapi
+ * /auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Register a new user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, password]
+ *             properties:
+ *               name: { type: string, example: John Doe }
+ *               email: { type: string, example: john@example.com }
+ *               password: { type: string, example: Password123! }
+ *     responses:
+ *       201:
+ *         description: User created
+ *       400:
+ *         description: Validation error
+ */
 router.post('/register', validate(registerSchema), register);
+
+/**
+ * @openapi
+ * /auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Login and get tokens
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string, example: john@example.com }
+ *               password: { type: string, example: Password123! }
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         headers:
+ *           Set-Cookie:
+ *             description: Contains the refresh_token HttpOnly cookie
+ */
 router.post('/login', validate(loginSchema), login);
+
 router.post('/refresh', refresh);        // Uses HttpOnly cookie — no body needed
 router.post('/logout', logout);          // Works even if not authenticated
 
