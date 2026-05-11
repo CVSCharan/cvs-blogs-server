@@ -11,13 +11,15 @@ export const createPost = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const getPosts = catchAsync(async (req: Request, res: Response) => {
-  const { page, limit, published, tag } = req.query;
+  const { page, limit, published, tag, search } = req.query;
   const result = await postService.getAllPosts({
     page: Number(page),
     limit: Number(limit),
     published: published === 'true' ? true : published === 'false' ? false : undefined,
     tag: tag as string,
+    search: search as string,
   });
+
 
   res.status(200).json({
     status: 'success',

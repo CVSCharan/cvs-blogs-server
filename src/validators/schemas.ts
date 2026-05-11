@@ -43,9 +43,26 @@ export const updatePostSchema = z.object({
   }),
 });
 
-// ─── Inferred Types ────────────────────────────────────────────────────────────
+// ─── User ──────────────────────────────────────────────────────────────────────
+export const updateProfileSchema = z.object({
+  body: z.object({
+    name: z.string().min(2).max(100).optional(),
+    bio: z.string().max(1000).optional(),
+    avatarUrl: z.string().url('Invalid avatar URL').optional(),
+  }),
+});
+
+// ─── Comment ───────────────────────────────────────────────────────────────────
+export const createCommentSchema = z.object({
+  body: z.object({
+    content: z.string().min(1).max(2000),
+    parentId: z.string().uuid().optional(),
+  }),
+});
 
 export type RegisterInput = z.infer<typeof registerSchema>['body'];
 export type LoginInput = z.infer<typeof loginSchema>['body'];
 export type CreatePostInput = z.infer<typeof createPostSchema>['body'];
 export type UpdatePostInput = z.infer<typeof updatePostSchema>['body'];
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>['body'];
+export type CreateCommentInput = z.infer<typeof createCommentSchema>['body'];

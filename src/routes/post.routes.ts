@@ -3,8 +3,12 @@ import * as postController from '../controllers/post.controller';
 import { protect, restrictTo } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { createPostSchema, updatePostSchema } from '../validators/schemas';
+import commentRoutes from './comment.routes';
 
 const router = Router();
+
+// Nested routes
+router.use('/:postId/comments', commentRoutes);
 
 // Public routes
 router.get('/', postController.getPosts);

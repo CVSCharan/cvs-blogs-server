@@ -53,14 +53,23 @@ export const getAllPosts = async (options: {
   limit?: number;
   published?: boolean;
   tag?: string;
+  search?: string;
 }) => {
   const { page, limit, skip } = getPagination(options);
 
-  const where: any = { deletedAt: null }; // Soft delete filter
+  const where: any = { deletedAt: null };
   if (options.published !== undefined) where.published = options.published;
   if (options.tag) {
     where.tags = { some: { name: options.tag } };
   }
+  
+  if (options.search) {
+    where.OR = [
+      { title: { contains: options.search, mode: 'insensitive' } },
+      { content: { contains: options.search, mode: 'insensitive' } },
+    ];
+  }
+
 
   const [posts, total] = await Promise.all([
     prisma.post.findMany({
