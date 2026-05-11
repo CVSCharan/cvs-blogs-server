@@ -30,6 +30,7 @@ export const createPostSchema = z.object({
     excerpt: z.string().max(500).optional(),
     published: z.boolean().optional().default(false),
     tags: z.array(z.string()).optional().default([]),
+    categoryId: z.string().uuid().optional(),
   }),
 });
 
@@ -40,6 +41,7 @@ export const updatePostSchema = z.object({
     excerpt: z.string().max(500).optional(),
     published: z.boolean().optional(),
     tags: z.array(z.string()).optional(),
+    categoryId: z.string().uuid().optional(),
   }),
 });
 

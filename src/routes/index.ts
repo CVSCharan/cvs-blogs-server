@@ -4,14 +4,24 @@ import authRoutes from './auth.routes';
 import postRoutes from './post.routes';
 import userRoutes from './user.routes';
 import adminRoutes from './admin.routes';
+import socialRoutes from './social.routes';
+import categoryRoutes from './category.routes';
 
 const router = Router();
 
 // Health Check
 router.get('/health', healthCheck);
 
+// Categories
+router.use('/categories', categoryRoutes);
+
+// Social & Interactions
+router.use('/', socialRoutes);
+
+
 // Auth
 router.use('/auth', authRoutes);
+
 
 // Admin
 router.use('/admin', adminRoutes);

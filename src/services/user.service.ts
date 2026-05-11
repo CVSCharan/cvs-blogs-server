@@ -2,7 +2,7 @@ import { prisma } from '../utils/prisma';
 import { AppError } from '../utils/AppError';
 import { UpdateProfileInput } from '../validators/schemas';
 
-export const getUserById = async (userId: string) => {
+export const getUserById = async (userId: string, currentUserId?: string) => {
   const user = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
     select: {
@@ -13,11 +13,27 @@ export const getUserById = async (userId: string) => {
       bio: true,
       avatarUrl: true,
       createdAt: true,
+      _count: {
+        select: {
+          followers: true,
+          following: true,
+          posts: { where: { deletedAt: null, published: true } },
+        },
+      },
     },
   });
 
   if (!user) throw new AppError('User not found', 404);
-  return user;
+
+  let isFollowing = false;
+  if (currentUserId && currentUserId !== userId) {
+    const follow = await prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId: currentUserId, followingId: userId } },
+    });
+    isFollowing = !!follow;
+  }
+
+  return { ...user, isFollowing };
 };
 
 export const updateProfile = async (userId: string, input: UpdateProfileInput) => {
@@ -36,13 +52,11 @@ export const updateProfile = async (userId: string, input: UpdateProfileInput) =
 };
 
 export const deleteAccount = async (userId: string) => {
-  // Soft delete the user
   await prisma.user.update({
     where: { id: userId },
     data: { deletedAt: new Date() },
   });
 
-  // Optional: Revoke all refresh tokens
   await prisma.refreshToken.updateMany({
     where: { userId, revokedAt: null },
     data: { revokedAt: new Date() },

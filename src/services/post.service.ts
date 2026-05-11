@@ -37,10 +37,9 @@ export const createPost = async (userId: string, input: CreatePostInput) => {
       },
     },
     include: {
-      author: {
-        select: { id: true, name: true, avatarUrl: true },
-      },
+      author: { select: { id: true, name: true, avatarUrl: true } },
       tags: true,
+      category: true,
     },
   });
 
@@ -54,6 +53,7 @@ export const getAllPosts = async (options: {
   published?: boolean;
   tag?: string;
   search?: string;
+  categoryId?: string;
 }) => {
   const { page, limit, skip } = getPagination(options);
 
@@ -61,6 +61,9 @@ export const getAllPosts = async (options: {
   if (options.published !== undefined) where.published = options.published;
   if (options.tag) {
     where.tags = { some: { name: options.tag } };
+  }
+  if (options.categoryId) {
+    where.categoryId = options.categoryId;
   }
   
   if (options.search) {
@@ -70,7 +73,6 @@ export const getAllPosts = async (options: {
     ];
   }
 
-
   const [posts, total] = await Promise.all([
     prisma.post.findMany({
       where,
@@ -78,11 +80,10 @@ export const getAllPosts = async (options: {
       take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
-        author: {
-          select: { id: true, name: true, avatarUrl: true },
-        },
+        author: { select: { id: true, name: true, avatarUrl: true } },
         tags: true,
-        _count: { select: { comments: true } },
+        category: true,
+        _count: { select: { comments: true, likes: true } },
       },
     }),
     prisma.post.count({ where }),
@@ -91,16 +92,24 @@ export const getAllPosts = async (options: {
   return formatPaginatedResult(posts, total, page, limit);
 };
 
-export const getPostBySlug = async (slug: string) => {
+export const getPostBySlug = async (slug: string, userId?: string) => {
   const post = await prisma.post.findFirst({
-    where: { slug, deletedAt: null }, // Soft delete filter
+    where: { slug, deletedAt: null },
     include: {
       author: {
-        select: { id: true, name: true, avatarUrl: true, bio: true },
+        select: { 
+          id: true, name: true, avatarUrl: true, bio: true,
+          _count: { select: { followers: true } }
+        },
       },
       tags: true,
+      category: true,
+      _count: { select: { likes: true, comments: true } },
+      // Check if current user liked this post
+      likes: userId ? { where: { userId }, take: 1 } : false,
+      bookmarks: userId ? { where: { userId }, take: 1 } : false,
       comments: {
-        where: { parentId: null, deletedAt: null }, // Soft delete filter for comments
+        where: { parentId: null, deletedAt: null },
         include: {
           author: { select: { id: true, name: true, avatarUrl: true } },
           replies: {
@@ -117,6 +126,15 @@ export const getPostBySlug = async (slug: string) => {
 
   if (!post) throw new AppError('Post not found', 404);
 
+  // Transform likes/bookmarks to boolean
+  const result = {
+    ...post,
+    isLiked: post.likes ? post.likes.length > 0 : false,
+    isBookmarked: post.bookmarks ? post.bookmarks.length > 0 : false,
+  };
+  delete (result as any).likes;
+  delete (result as any).bookmarks;
+
   prisma.post
     .update({
       where: { id: post.id },
@@ -124,7 +142,7 @@ export const getPostBySlug = async (slug: string) => {
     })
     .catch((err) => console.error('Failed to increment view count', err));
 
-  return post;
+  return result;
 };
 
 export const updatePost = async (
@@ -134,7 +152,7 @@ export const updatePost = async (
   input: UpdatePostInput
 ) => {
   const post = await prisma.post.findFirst({
-    where: { id: postId, deletedAt: null }, // Soft delete filter
+    where: { id: postId, deletedAt: null },
   });
   if (!post) throw new AppError('Post not found', 404);
 
@@ -166,6 +184,7 @@ export const updatePost = async (
     include: {
       author: { select: { id: true, name: true, avatarUrl: true } },
       tags: true,
+      category: true,
     },
   });
 
@@ -175,7 +194,7 @@ export const updatePost = async (
 
 export const deletePost = async (postId: string, userId: string, userRole: string) => {
   const post = await prisma.post.findFirst({
-    where: { id: postId, deletedAt: null }, // Soft delete filter
+    where: { id: postId, deletedAt: null },
   });
   if (!post) throw new AppError('Post not found', 404);
 
@@ -183,7 +202,6 @@ export const deletePost = async (postId: string, userId: string, userRole: strin
     throw new AppError('You do not have permission to delete this post', 403);
   }
 
-  // Soft delete
   await prisma.post.update({
     where: { id: postId },
     data: { deletedAt: new Date() },

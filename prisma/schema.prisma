@@ -18,6 +18,13 @@ model User {
   comments      Comment[]
   refreshTokens RefreshToken[]
   notifications Notification[]
+  likes         Like[]
+  bookmarks     Bookmark[]
+  
+  // Following system
+  followers     Follow[]       @relation("following")
+  following     Follow[]       @relation("follower")
+
   deletedAt     DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -49,13 +56,64 @@ model Post {
   metaTitle     String?
   metaDesc      String?
   readTime      Int? // estimated minutes
+  
   authorId      String
   author        User      @relation(fields: [authorId], references: [id])
+  
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id])
+  
   tags          Tag[]
   comments      Comment[]
+  likes         Like[]
+  bookmarks     Bookmark[]
+  
   deletedAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+  posts       Post[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId]) // One like per user per post
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
 }
 
 model Tag {
